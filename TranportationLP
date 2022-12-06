@@ -1,0 +1,33 @@
+!pip install pulp
+!apt-get install -y -qq glpk-utils
+from pulp import LpProblem, LpVariable, LpStatus, LpMinimize, GLPK, value
+#data for linear optimization problem
+M = 3 #supply points
+N = 3 #demand points
+a = range(1, M+1)
+a1 = range(M)
+b = range(1,N+1)
+b1 = range(N)
+#index list for decision variables x
+xindx = [(a[i], b[j])for j in b1 for i in a1]
+
+model = LpProblem("Transportation LP Problem", LpMinimize) 
+#creation of the decision variables
+x = LpVariable.dicts("X", xindx,0, None)
+#objective function
+model += 4.0* x[1,1] + 3.0* x[1,2] + 8.0* x[1,3] \
++ 7.0* x[2,1] + 5.0* x[2,2] + 9.0* x[2,3] \
++ 4.0* x[3,1] + 5.0* x[3,2] + 5.0* x[3,3], "Transportation cost"
+#supply constraints
+model += x[1,1] + x[1,2] + x[1,3] <= 300.0, "Supply Pt 1"
+model += x[2,1] + x[2,2] + x[2,3] <= 300.0, "Supply Pt 2"
+model += x[3,1] + x[3,2] + x[3,3] <= 100.0, "Supply Pt 3"
+#demand constraints
+model += x[1,1] + x[2,1] + x[3,1] >= 200.0, "Demand Pt 1"
+model += x[1,2] + x[2,2] + x[3,2] >= 200.0, "Demand Pt 2"
+model += x[1,3] + x[2,3] + x[3,3] >= 300.0, "Demand Pt 3"
+model.solve(GLPK()) #solving using specified PuLP solver
+print("Status:", LpStatus[model.status]) #status of solution
+for v in model.variables():
+  print(v.name, "=", v.varValue) #variable with resolved optimum value
+print("Objective Function", value(model.objective)) #optimized value of objective function
